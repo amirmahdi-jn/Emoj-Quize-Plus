@@ -53,7 +53,9 @@ function syncToDatabase() {
         remove_hint_uses: removeHintUses,
         last_gift_open: lastGiftOpen ? new Date(lastGiftOpen).toISOString() : null,
         last_challenge_date: lastChallengeDate,
-        challenge_correct: challengeCorrect
+        challenge_correct: challengeCorrect,
+        active_frame: currentFrame,
+        unlocked_frames: JSON.stringify(unlockedFrames)
     }, { onConflict: 'device_id' }).then(({ error }) => {
         if (error) {
             console.error("Sync Error:", error);
@@ -72,6 +74,8 @@ function loadProgress() {
     currentChapter = 1;
     currentLevelIndex = 0;
     removeHintUses = 0;
+    currentFrame = 'none';
+    unlockedFrames = [];
 }
 
 let myStatsSubscription = null;
@@ -91,6 +95,16 @@ function subscribeToMyProfileStats() {
             if (typeof p.coins === 'number') currentCoins = p.coins;
             if (typeof p.diamonds === 'number') currentDiamonds = p.diamonds;
             if (typeof p.trophies === 'number') currentTrophies = p.trophies;
+            if (p.active_frame !== undefined) {
+    currentFrame = p.active_frame || 'none';
+    applyCurrentFrame();
+}
+if (p.unlocked_frames) {
+    try {
+        unlockedFrames = JSON.parse(p.unlocked_frames) || [];
+        if (!Array.isArray(unlockedFrames)) unlockedFrames = [];
+    } catch (e) {}
+}
             updateAllStatsUI();
         })
         .subscribe();
@@ -129,6 +143,13 @@ async function loadProfile() {
         lastGiftOpen = dbProfile.last_gift_open ? new Date(dbProfile.last_gift_open).getTime() : null;
         lastChallengeDate = dbProfile.last_challenge_date || null;
         challengeCorrect = dbProfile.challenge_correct || false;
+        currentFrame = dbProfile.active_frame || 'none';
+try {
+    unlockedFrames = dbProfile.unlocked_frames ? JSON.parse(dbProfile.unlocked_frames) : [];
+    if (!Array.isArray(unlockedFrames)) unlockedFrames = [];
+} catch (e) {
+    unlockedFrames = [];
+}
 
         solvedLevels = {};
         if (dbProfile.solved_levels_array) {
@@ -158,6 +179,8 @@ async function loadProfile() {
     currentTrophies = 0;
 
     const { error: insertError } = await supabaseClient.from('profiles').insert({
+        active_frame: 'none',
+        unlocked_frames: '[]'
         name: currentName,
         device_id: deviceId,
         custom_avatar_url: null,
