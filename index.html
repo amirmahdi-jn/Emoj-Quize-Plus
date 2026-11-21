@@ -442,6 +442,16 @@
                     </div>
                     <span class="label">خرید الماس</span>
                 </div>
+                 <div class="shop-item" onclick="closeModal(); openModal('frame-shop-modal');">
+            <div class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#c724ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <circle cx="12" cy="12" r="5"/>
+                    <path d="M12 3v2M12 19v2M3 12h2M19 12h2"/>
+                </svg>
+            </div>
+            <span class="label">قالب پروفایل</span>
+        </div>
             </div>
             <button class="close-btn" onclick="closeModal()">بستن</button>
         </div>
@@ -556,6 +566,12 @@
             <button class="close-btn" onclick="closeModal(); openModal('shop-modal');">بازگشت</button>
         </div>
 
+ <div id="frame-shop-modal" class="modal-box" onclick="event.stopPropagation()">
+            <div class="modal-title">قالب پروفایل</div>
+            <div class="frame-list" id="frame-list"></div>
+            <button class="close-btn" onclick="closeModal(); openModal('shop-modal');">بازگشت</button>
+        </div>
+        
         <div id="payment-modal" class="modal-box" onclick="event.stopPropagation()">
             <div class="modal-title" style="color:#ffffff;">پرداخت</div>
 
