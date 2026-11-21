@@ -213,6 +213,7 @@ function updateProfileUI() {
 
     if (avatarEl) avatarEl.src = avatarSrc;
     if (previewEl) previewEl.src = avatarSrc;
+    applyCurrentFrame();
 }
 
 function updateAllStatsUI() {
