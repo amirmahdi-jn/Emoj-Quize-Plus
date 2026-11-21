@@ -111,6 +111,20 @@ function switchPanelTab(tabId) {
     updateAllStatsUI();
 }
 
+function applyCurrentFrame() {
+    const allFrameClasses = ['frame-fire', 'frame-spirit', 'frame-aurora', 'frame-glitch'];
+    const apply = (el) => {
+        if (!el) return;
+        allFrameClasses.forEach(c => el.classList.remove(c));
+        if (currentFrame && currentFrame !== 'none') {
+            el.classList.add('frame-' + currentFrame);
+        }
+    };
+    apply(document.querySelector('.profile-avatar'));
+    apply(document.getElementById('profilePreview'));
+    apply(document.getElementById('ttt-my-avatar'));
+}
+
 function openModal(modalId) {
     if (modalId !== 'profile-modal' && modalId !== 'custom-alert-modal' && checkGuestRestriction()) return;
 
@@ -129,6 +143,7 @@ function openModal(modalId) {
         const previewEl = document.getElementById('profilePreview');
         if (previewEl) previewEl.src = currentCustomAvatarUrl ? currentCustomAvatarUrl : defaultAvatar;
     }
+    if (modalId === 'frame-shop-modal') renderFrameShop();
 }
 
 function closeModal() {
