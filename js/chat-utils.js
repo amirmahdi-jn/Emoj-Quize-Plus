@@ -109,7 +109,7 @@ async function fetchLeaderboard() {
 
     const { data, error } = await supabaseClient
         .from('profiles')
-        .select('name, solved_levels, custom_avatar_url, created_at, trophies')
+        .select('name, solved_levels, custom_avatar_url, created_at, trophies, active_frame')
         .neq('name', 'Guest')
         .order('trophies', { ascending: false, nullsFirst: false })
         .order('solved_levels', { ascending: false })
@@ -155,9 +155,9 @@ async function fetchLeaderboard() {
 
         row.innerHTML = `
             <div style="display: flex; justify-content: center; align-items: center;">${rankHTML}</div>
-            <div style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex-shrink: 0;">
-                <img src="${avatarSrc}" style="width: 100%; height: 100%; object-fit: cover;">
-            </div>
+           <div class="lb-avatar ${profile.active_frame && profile.active_frame !== 'none' ? 'frame-' + profile.active_frame : ''}" style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex-shrink: 0;">
+    <img src="${avatarSrc}" style="width: 100%; height: 100%; object-fit: cover;">
+</div>
             <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
                 <span style="color: ${nameColor}; font-weight: bold;"></span>
                 <span style="font-size: 0.8rem; color: #ffffff; display: flex; align-items: center; gap: 4px;">${trophyIconSvg} ${profile.trophies || 0}</span>
