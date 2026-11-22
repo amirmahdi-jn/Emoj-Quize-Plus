@@ -232,7 +232,7 @@ async function handleAvatarUpload(event) {
         }
 
         const { data: { publicUrl } } = supabaseClient.storage.from('avatars').getPublicUrl(fileName);
-        
+
         currentCustomAvatarUrl = `${publicUrl}?t=${Date.now()}`;
         currentDiamonds -= 10;
 
@@ -242,7 +242,7 @@ async function handleAvatarUpload(event) {
 
         if (previewEl) previewEl.src = currentCustomAvatarUrl;
         if (headerAvatar) headerAvatar.src = currentCustomAvatarUrl;
-        
+
         showCustomAlert('موفق', 'عکس پروفایل با موفقیت تغییر کرد.', 'success');
 
     } catch (e) {
@@ -338,21 +338,13 @@ async function saveName() {
         syncToDatabase();
 
         if (oldName && oldName !== raw) {
-            await supabaseClient.from('messages')
-                .update({ sender_name: currentName })
-                .eq('sender_name', oldName);
-            await supabaseClient.from('private_messages')
-                .update({ sender_name: currentName })
-                .eq('sender_name', oldName);
-            await supabaseClient.from('private_messages')
-                .update({ receiver_name: currentName })
-                .eq('receiver_name', oldName);
-            await supabaseClient.from('friend_requests')
-                .update({ sender_name: currentName })
-                .eq('sender_name', oldName);
-            await supabaseClient.from('friend_requests')
-                .update({ receiver_name: currentName })
-                .eq('receiver_name', oldName);
+            await Promise.all([
+                supabaseClient.from('messages').update({ sender_name: currentName }).eq('sender_name', oldName),
+                supabaseClient.from('private_messages').update({ sender_name: currentName }).eq('sender_name', oldName),
+                supabaseClient.from('private_messages').update({ receiver_name: currentName }).eq('receiver_name', oldName),
+                supabaseClient.from('friend_requests').update({ sender_name: currentName }).eq('sender_name', oldName),
+                supabaseClient.from('friend_requests').update({ receiver_name: currentName }).eq('receiver_name', oldName)
+            ]);
         }
 
         if (currentPanelTab === 'top-players') {
