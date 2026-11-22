@@ -112,7 +112,11 @@ function switchPanelTab(tabId) {
 }
 
 function applyCurrentFrame() {
-    const allFrameClasses = ['frame-fire', 'frame-spirit', 'frame-aurora', 'frame-glitch'];
+    const allFrameClasses = [
+        'frame-fire', 'frame-spirit', 'frame-aurora', 'frame-glitch',
+        'frame-crown', 'frame-toxic', 'frame-opal', 'frame-lightning',
+        'frame-rose-gold', 'frame-cosmic'
+    ];
     const apply = (el) => {
         if (!el) return;
         allFrameClasses.forEach(c => el.classList.remove(c));
@@ -120,7 +124,7 @@ function applyCurrentFrame() {
             el.classList.add('frame-' + currentFrame);
         }
     };
-    apply(document.querySelector('.profile-avatar'));
+    document.querySelectorAll('.profile-avatar').forEach(apply);
     apply(document.getElementById('profilePreview'));
     apply(document.getElementById('ttt-my-avatar'));
 }
