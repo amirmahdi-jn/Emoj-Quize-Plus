@@ -1,9 +1,24 @@
+async function cacheProfilesForNames(names, includeLastSeen = true) {
+    const uniqueNames = [...new Set(names.filter(Boolean))];
+    const fields = includeLastSeen ? 'name, custom_avatar_url, active_frame, last_seen' : 'name, custom_avatar_url, active_frame';
+    const missing = uniqueNames.filter(name => {
+        const profile = cachedAvatarMap[name];
+        return !profile || profile.custom_avatar_url === undefined || profile.active_frame === undefined || (includeLastSeen && profile.last_seen === undefined);
+    });
+    if (!missing.length) return;
+    const { data } = await supabaseClient.from('profiles').select(fields).in('name', missing);
+    if (data) data.forEach(profile => {
+        cachedAvatarMap[profile.name] = { ...(cachedAvatarMap[profile.name] || {}), custom_avatar_url: profile.custom_avatar_url, active_frame: profile.active_frame, ...(includeLastSeen ? { last_seen: profile.last_seen } : {}) };
+    });
+}
+
 async function updatePrivateBadges() {
-    const { count: msgCount } = await supabaseClient
-        .from('private_messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('receiver_name', currentName)
-        .eq('is_read', false);
+    const [messagesResult, requestsResult] = await Promise.all([
+        supabaseClient.from('private_messages').select('*', { count: 'exact', head: true }).eq('receiver_name', currentName).eq('is_read', false),
+        supabaseClient.from('friend_requests').select('*', { count: 'exact', head: true }).eq('receiver_name', currentName).eq('status', 'pending')
+    ]);
+    const msgCount = messagesResult.count || 0;
+    const reqCount = requestsResult.count || 0;
 
     const msgBadge = document.getElementById('msg-badge');
     if (msgBadge) {
@@ -14,12 +29,6 @@ async function updatePrivateBadges() {
             msgBadge.style.display = 'none';
         }
     }
-
-    const { count: reqCount } = await supabaseClient
-        .from('friend_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('receiver_name', currentName)
-        .eq('status', 'pending');
 
     const reqBadge = document.getElementById('req-badge');
     if (reqBadge) {
@@ -180,7 +189,7 @@ async function sendFriendRequest(receiver) {
 
 async function loadChatsList(container) {
     const { data: friends } = await supabaseClient.from('friend_requests')
-        .select('*')
+        .select('id, sender_name, receiver_name, status, created_at')
         .or(`and(sender_name.eq.${currentName},receiver_name.neq.${currentName}),and(receiver_name.eq.${currentName},sender_name.neq.${currentName})`)
         .eq('status', 'accepted');
 
@@ -189,13 +198,12 @@ async function loadChatsList(container) {
         return;
     }
 
-    const { data: profiles } = await supabaseClient.from('profiles').select('name, custom_avatar_url, active_frame, last_seen');
-    if (profiles) profiles.forEach(p => cachedAvatarMap[p.name] = { custom_avatar_url: p.custom_avatar_url, active_frame: p.active_frame, last_seen: p.last_seen });
-
-    const { data: unreadMsgs } = await supabaseClient.from('private_messages')
-        .select('sender_name')
-        .eq('receiver_name', currentName)
-        .eq('is_read', false);
+    const otherNames = friends.map(f => f.sender_name === currentName ? f.receiver_name : f.sender_name);
+    const [, unreadResult] = await Promise.all([
+        cacheProfilesForNames(otherNames),
+        supabaseClient.from('private_messages').select('sender_name').eq('receiver_name', currentName).eq('is_read', false)
+    ]);
+    const unreadMsgs = unreadResult.data;
 
     const unreadCounts = {};
     if (unreadMsgs) {
@@ -232,7 +240,7 @@ async function loadChatsList(container) {
 
 async function loadFriendsList(container) {
     const { data: friends } = await supabaseClient.from('friend_requests')
-        .select('*')
+        .select('id, sender_name, receiver_name, status, created_at')
         .or(`and(sender_name.eq.${currentName},receiver_name.neq.${currentName}),and(receiver_name.eq.${currentName},sender_name.neq.${currentName})`)
         .eq('status', 'accepted');
 
@@ -241,8 +249,8 @@ async function loadFriendsList(container) {
         return;
     }
 
-    const { data: profiles } = await supabaseClient.from('profiles').select('name, custom_avatar_url, active_frame, last_seen');
-    if (profiles) profiles.forEach(p => cachedAvatarMap[p.name] = { custom_avatar_url: p.custom_avatar_url, active_frame: p.active_frame, last_seen: p.last_seen });
+    const otherNames = friends.map(f => f.sender_name === currentName ? f.receiver_name : f.sender_name);
+    await cacheProfilesForNames(otherNames);
 
     container.innerHTML = '';
     friends.forEach(f => {
@@ -300,7 +308,7 @@ async function confirmDeleteFriend() {
 
 async function loadRequestsList(container) {
     const { data: requests } = await supabaseClient.from('friend_requests')
-        .select('*')
+        .select('id, sender_name, receiver_name, status, created_at')
         .eq('receiver_name', currentName)
         .eq('status', 'pending');
 
@@ -309,8 +317,7 @@ async function loadRequestsList(container) {
         return;
     }
 
-    const { data: profiles } = await supabaseClient.from('profiles').select('name, custom_avatar_url, active_frame');
-    if (profiles) profiles.forEach(p => cachedAvatarMap[p.name] = { custom_avatar_url: p.custom_avatar_url, active_frame: p.active_frame });
+    await cacheProfilesForNames(requests.map(request => request.sender_name), false);
 
     container.innerHTML = '';
     requests.forEach(r => {
@@ -642,4 +649,4 @@ async function sendPrivateMessage() {
             container.scrollTop = container.scrollHeight;
         }
     }
-}
+        }
