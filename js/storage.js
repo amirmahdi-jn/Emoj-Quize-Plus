@@ -180,7 +180,7 @@ try {
 
     const { error: insertError } = await supabaseClient.from('profiles').insert({
         active_frame: 'none',
-        unlocked_frames: '[]'
+        unlocked_frames: '[]',
         name: currentName,
         device_id: deviceId,
         custom_avatar_url: null,
