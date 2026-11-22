@@ -12,15 +12,22 @@ function openPayment(key, amount, type) {
 }
 
 const FRAME_DEFS = [
-    { id: 'none', name: 'بدون قالب', price: 0, desc: 'بدون هاله و افکت' },
-    { id: 'fire', name: 'هاله آتشین', price: 30, desc: 'هاله‌ای از شعله‌های سوزان' },
-    { id: 'aurora', name: 'پرده اورورا', price: 50, desc: 'رنگ‌های درخشان شمال' },
-    { id: 'glitch', name: 'روح گلیچ', price: 80, desc: 'اعوجاج دیجیتال' },
-    { id: 'neon', name: 'حاشیه نئون', price: 100, desc: 'حاشیه نئونی با درخشش چندلایه' },
-    { id: 'rose-gold', name: 'رزگلد درخشان', price: 130, desc: 'درخشش ذرات نورانی' }
+    { id: 'none', name: 'بدون قالب', price: 0, desc: 'بدون افکت' },
+    { id: 'fire', name: 'هاله آتشین', price: 30, desc: 'شعله‌های سوزان' },
+    { id: 'aurora', name: 'پرده اورورا', price: 50, desc: 'رنگ‌های درخشان' },
+    { id: 'glitch', name: 'روح گلیچ', price: 80, desc: 'موج‌های دیجیتال' }
 ];
 
 function renderFrameShop() {
+    const allowedFrames = ['fire', 'aurora', 'glitch'];
+    const previousFrame = currentFrame;
+    const previousUnlockedFrames = JSON.stringify(unlockedFrames);
+    if (!allowedFrames.includes(currentFrame)) currentFrame = 'none';
+    unlockedFrames = Array.isArray(unlockedFrames) ? unlockedFrames.filter(frame => allowedFrames.includes(frame)) : [];
+    if (currentFrame !== previousFrame || JSON.stringify(unlockedFrames) !== previousUnlockedFrames) {
+        applyCurrentFrame();
+        syncToDatabase();
+    }
     const container = document.getElementById('frame-list');
     if (!container) return;
     const diamondIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="frame-coin-icon"><path d="M10.5 3 8 9l4 13 4-13-2.5-6"/><path d="M17 3a2 2 0 0 1 1.6.8l3 4a2 2 0 0 1 .013 2.382l-7.99 10.986a2 2 0 0 1-3.247 0l-7.99-10.986A2 2 0 0 1 2.4 7.8l2.998-3.997A2 2 0 0 1 7 3z"/><path d="M2 9h20"/></svg>';
@@ -66,4 +73,4 @@ function equipFrame(id) {
     syncToDatabase();
     applyCurrentFrame();
     renderFrameShop();
-     }
+}
