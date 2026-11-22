@@ -10,12 +10,19 @@ function openPayment(key, amount, type) {
         overlay.classList.add('active');
     }
 }
+
 const FRAME_DEFS = [
     { id: 'none', name: 'بدون قالب', price: 0, desc: 'بدون هاله و افکت' },
     { id: 'fire', name: 'هاله آتشین', price: 30, desc: 'هاله‌ای از شعله‌های سوزان' },
     { id: 'spirit', name: 'هاله روح', price: 30, desc: 'نور اثیری ارواح' },
     { id: 'aurora', name: 'پرده اورورا', price: 50, desc: 'رنگ‌های درخشان شمال' },
-    { id: 'glitch', name: 'روح گلیچ', price: 50, desc: 'اعوجاج دیجیتال' }
+    { id: 'glitch', name: 'روح گلیچ', price: 50, desc: 'اعوجاج دیجیتال' },
+    { id: 'crown', name: 'تاج پادشاهی', price: 80, desc: 'قاب طلایی شامپاینی با نشان سلطنتی' },
+    { id: 'toxic', name: 'نئون سمی', price: 90, desc: 'قاب مشکی با خطوط زرد لیمویی' },
+    { id: 'opal', name: 'کریستال اوپال', price: 100, desc: 'کریستال سفید صدفی با جلوه رنگین‌کمانی' },
+    { id: 'lightning', name: 'صاعقه نقره‌ای', price: 100, desc: 'جرقه‌های نقره‌ای و نور الکتریکی متحرک' },
+    { id: 'rose-gold', name: 'رزگلد درخشان', price: 100, desc: 'درخشش متحرک رزگلد و ذرات نورانی' },
+    { id: 'cosmic', name: 'مدار کیهانی', price: 150, desc: 'حلقه‌های مداری و ستاره‌های چشمک‌زن' }
 ];
 
 function renderFrameShop() {
