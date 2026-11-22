@@ -112,10 +112,14 @@ function switchPanelTab(tabId) {
 }
 
 function applyCurrentFrame() {
+    const allowedFrames = ['fire', 'aurora', 'glitch', 'neon', 'rose-gold'];
+    const previousFrame = currentFrame;
+    const previousUnlockedFrames = JSON.stringify(unlockedFrames);
+    if (!allowedFrames.includes(currentFrame)) currentFrame = 'none';
+    unlockedFrames = Array.isArray(unlockedFrames) ? unlockedFrames.filter(frame => allowedFrames.includes(frame)) : [];
+    if (currentFrame !== previousFrame || JSON.stringify(unlockedFrames) !== previousUnlockedFrames) syncToDatabase();
     const allFrameClasses = [
-        'frame-fire', 'frame-spirit', 'frame-aurora', 'frame-glitch',
-        'frame-crown', 'frame-toxic', 'frame-opal', 'frame-lightning',
-        'frame-rose-gold', 'frame-cosmic'
+        'frame-fire', 'frame-aurora', 'frame-glitch', 'frame-neon', 'frame-rose-gold'
     ];
     const apply = (el) => {
         if (!el) return;
@@ -233,7 +237,7 @@ async function handleAvatarUpload(event) {
         }
 
         const { data: { publicUrl } } = supabaseClient.storage.from('avatars').getPublicUrl(fileName);
-        
+
         currentCustomAvatarUrl = `${publicUrl}?t=${Date.now()}`;
         currentDiamonds -= 10;
 
@@ -243,7 +247,7 @@ async function handleAvatarUpload(event) {
 
         if (previewEl) previewEl.src = currentCustomAvatarUrl;
         if (headerAvatar) headerAvatar.src = currentCustomAvatarUrl;
-        
+
         showCustomAlert('موفق', 'عکس پروفایل با موفقیت تغییر کرد.', 'success');
 
     } catch (e) {
