@@ -55,8 +55,7 @@ async function initPanelChat() {
                     .eq('name', payload.new.sender_name)
                     .maybeSingle();
                 const avatarUrl = profileData && profileData.custom_avatar_url ? profileData.custom_avatar_url : defaultAvatar;
-                const activeFrame = profileData && profileData.active_frame ? profileData.active_frame : 'none';
-
+                const activeFrame = profileData ? profileData.active_frame : 'none';
                 if (document.querySelector(`[data-msg-id="${payload.new.id}"]`)) return;
 
                 const msgDate = new Date(payload.new.created_at).toDateString();
@@ -123,7 +122,7 @@ function appendPanelChatMessage(msg, avatarUrl, activeFrame = 'none') {
     wrapper.setAttribute('data-date', new Date(msg.created_at).toDateString());
 
     const avatarDiv = document.createElement('div');
-    avatarDiv.className = 'chat-msg-avatar ' + getFrameClass(activeFrame || 'none');
+    avatarDiv.className = 'chat-msg-avatar ' + getFrameClass(activeFrame || (isMe ? currentFrame : 'none'));
     const avatarImg = document.createElement('img');
     avatarImg.src = avatarSrc;
     avatarImg.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
