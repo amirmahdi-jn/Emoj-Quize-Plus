@@ -16,10 +16,16 @@ async function initPanelChat() {
         return;
     }
 
-    const { data: profilesData } = await supabaseClient.from('profiles').select('name, custom_avatar_url, active_frame');
+    const senderNames = [...new Set((data || []).map(msg => msg.sender_name).filter(Boolean))];
     const avatarMap = {};
+    const { data: profilesData } = senderNames.length
+        ? await supabaseClient.from('profiles').select('name, custom_avatar_url, active_frame').in('name', senderNames)
+        : { data: [] };
     if (profilesData) {
-        profilesData.forEach(p => { avatarMap[p.name] = { url: p.custom_avatar_url, frame: p.active_frame }; });
+        profilesData.forEach(p => {
+            avatarMap[p.name] = { url: p.custom_avatar_url, frame: p.active_frame };
+            if (typeof cachedAvatarMap !== 'undefined') cachedAvatarMap[p.name] = { ...(cachedAvatarMap[p.name] || {}), custom_avatar_url: p.custom_avatar_url, active_frame: p.active_frame };
+        });
     }
 
     chatMessages.innerHTML = '';
@@ -49,13 +55,14 @@ async function initPanelChat() {
             async (payload) => {
                 if (document.querySelector(`[data-msg-id="${payload.new.id}"]`)) return;
 
-                const { data: profileData } = await supabaseClient
-                    .from('profiles')
-                    .select('custom_avatar_url, active_frame')
-                    .eq('name', payload.new.sender_name)
-                    .maybeSingle();
-                const avatarUrl = profileData && profileData.custom_avatar_url ? profileData.custom_avatar_url : defaultAvatar;
-                const activeFrame = profileData ? profileData.active_frame : 'none';
+                let profileData = typeof cachedAvatarMap !== 'undefined' ? cachedAvatarMap[payload.new.sender_name] : null;
+                if (!profileData || profileData.custom_avatar_url === undefined || profileData.active_frame === undefined) {
+                    const { data } = await supabaseClient.from('profiles').select('name, custom_avatar_url, active_frame').eq('name', payload.new.sender_name).maybeSingle();
+                    profileData = data || {};
+                    if (typeof cachedAvatarMap !== 'undefined') cachedAvatarMap[payload.new.sender_name] = { ...(cachedAvatarMap[payload.new.sender_name] || {}), ...profileData };
+                }
+                const avatarUrl = profileData.custom_avatar_url || defaultAvatar;
+                const activeFrame = profileData.active_frame || 'none';
                 if (document.querySelector(`[data-msg-id="${payload.new.id}"]`)) return;
 
                 const msgDate = new Date(payload.new.created_at).toDateString();
@@ -234,4 +241,4 @@ async function sendPanelChatMessage() {
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
     }
-}
+                        }
