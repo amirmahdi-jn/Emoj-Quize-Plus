@@ -308,6 +308,7 @@
 
 .chat-msg-avatar {
     position: relative;
+    isolation: isolate;
 }
 
 .chat-msg-avatar.frame-fire,
@@ -321,11 +322,14 @@
 .chat-msg-avatar.frame-aurora::after,
 .chat-msg-avatar.frame-glitch::after {
     content: "";
+    display: block;
     position: absolute;
-    inset: 1px;
+    inset: 2px;
+    border: 2px solid transparent;
     border-radius: 50%;
+    box-sizing: border-box;
     pointer-events: none;
-    z-index: 1;
+    z-index: 2;
 }
 
 .chat-msg-avatar.frame-fire::after {
@@ -334,10 +338,12 @@
 
 @keyframes chat-frame-fire {
     0%, 100% {
-        box-shadow: inset 0 0 7px 2px #ff4500, inset 0 0 13px 3px rgba(255,69,0,0.5);
+        border-color: #ff4500;
+        box-shadow: inset 0 0 5px 1px rgba(255,69,0,0.7), 0 0 3px rgba(255,69,0,0.4);
     }
     50% {
-        box-shadow: inset 0 0 9px 3px #ff8c00, inset 0 0 16px 5px rgba(255,140,0,0.6);
+        border-color: #ffb000;
+        box-shadow: inset 0 0 8px 2px rgba(255,140,0,0.8), 0 0 4px rgba(255,140,0,0.5);
     }
 }
 
@@ -347,16 +353,20 @@
 
 @keyframes chat-frame-aurora {
     0%, 100% {
-        box-shadow: inset 0 0 8px 2px #00ffaa;
+        border-color: #00ffaa;
+        box-shadow: inset 0 0 6px 2px rgba(0,255,170,0.65), 0 0 3px rgba(0,255,170,0.4);
     }
     25% {
-        box-shadow: inset 0 0 9px 3px #00aaff;
+        border-color: #00aaff;
+        box-shadow: inset 0 0 6px 2px rgba(0,170,255,0.65), 0 0 3px rgba(0,170,255,0.4);
     }
     50% {
-        box-shadow: inset 0 0 10px 3px #aa00ff;
+        border-color: #aa00ff;
+        box-shadow: inset 0 0 6px 2px rgba(170,0,255,0.65), 0 0 3px rgba(170,0,255,0.4);
     }
     75% {
-        box-shadow: inset 0 0 9px 3px #ff00aa;
+        border-color: #ff00aa;
+        box-shadow: inset 0 0 6px 2px rgba(255,0,170,0.65), 0 0 3px rgba(255,0,170,0.4);
     }
 }
 
@@ -366,12 +376,15 @@
 
 @keyframes chat-frame-glitch {
     0%, 85%, 100% {
-        box-shadow: inset 0 0 7px 2px #ff00ff, inset 0 0 11px 3px rgba(0,255,255,0.5);
+        border-color: #ff00ff;
+        box-shadow: inset 0 0 5px 1px rgba(255,0,255,0.65), 0 0 3px rgba(0,255,255,0.4);
     }
     90% {
-        box-shadow: inset 0 0 10px 3px #ffffff, inset 0 0 7px 2px #ff00ff;
+        border-color: #ffffff;
+        box-shadow: inset 0 0 8px 2px rgba(255,0,255,0.8), 0 0 4px #00ffff;
     }
     95% {
-        box-shadow: inset 0 0 9px 3px #00ffff, inset 0 0 7px 2px #ff00ff;
+        border-color: #00ffff;
+        box-shadow: inset 0 0 8px 2px rgba(255,0,255,0.8), 0 0 4px #ff00ff;
     }
-        }
+}
