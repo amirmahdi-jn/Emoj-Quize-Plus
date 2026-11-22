@@ -1,3 +1,4 @@
+
 const DEVICE_KEY = 'emojiQuizDeviceId_v8';
 
 function setCookie(name, value, days) {
@@ -39,30 +40,40 @@ function getDeviceId() {
     return id;
 }
 
-function syncToDatabase() {
+async function syncToDatabase() {
     const solvedArray = Object.keys(solvedLevels).map(k => parseInt(k));
-    supabaseClient.from('profiles').upsert({
-        device_id: getDeviceId(),
-        name: currentName,
-        custom_avatar_url: currentCustomAvatarUrl,
-        coins: currentCoins,
-        diamonds: currentDiamonds,
-        trophies: currentTrophies,
-        solved_levels: solvedArray.length,
-        solved_levels_array: JSON.stringify(solvedArray),
-        remove_hint_uses: removeHintUses,
-        last_gift_open: lastGiftOpen ? new Date(lastGiftOpen).toISOString() : null,
-        last_challenge_date: lastChallengeDate,
-        challenge_correct: challengeCorrect,
-        active_frame: currentFrame,
-        unlocked_frames: JSON.stringify(unlockedFrames)
-    }, { onConflict: 'device_id' }).then(({ error }) => {
+
+    try {
+        const { error } = await supabaseClient.from('profiles').upsert({
+            device_id: getDeviceId(),
+            name: currentName,
+            custom_avatar_url: currentCustomAvatarUrl,
+            coins: currentCoins,
+            diamonds: currentDiamonds,
+            trophies: currentTrophies,
+            solved_levels: solvedArray.length,
+            solved_levels_array: JSON.stringify(solvedArray),
+            remove_hint_uses: removeHintUses,
+            last_gift_open: lastGiftOpen ? new Date(lastGiftOpen).toISOString() : null,
+            last_challenge_date: lastChallengeDate,
+            challenge_correct: challengeCorrect,
+            active_frame: currentFrame,
+            unlocked_frames: JSON.stringify(unlockedFrames)
+        }, { onConflict: 'device_id' });
+
         if (error) {
             console.error("Sync Error:", error);
             showCustomAlert('خطا', 'خطا در ذخیره اطلاعات در دیتابیس! لطفا اینترنت خود را بررسی کنید.', 'error');
+            return false;
         }
+
         updateAllStatsUI();
-    });
+        return true;
+    } catch (error) {
+        console.error("Sync Error:", error);
+        showCustomAlert('خطا', 'خطا در ذخیره اطلاعات در دیتابیس! لطفا اینترنت خود را بررسی کنید.', 'error');
+        return false;
+    }
 }
 
 function loadProgress() {
@@ -96,15 +107,15 @@ function subscribeToMyProfileStats() {
             if (typeof p.diamonds === 'number') currentDiamonds = p.diamonds;
             if (typeof p.trophies === 'number') currentTrophies = p.trophies;
             if (p.active_frame !== undefined) {
-    currentFrame = p.active_frame || 'none';
-    applyCurrentFrame();
-}
-if (p.unlocked_frames) {
-    try {
-        unlockedFrames = JSON.parse(p.unlocked_frames) || [];
-        if (!Array.isArray(unlockedFrames)) unlockedFrames = [];
-    } catch (e) {}
-}
+                currentFrame = p.active_frame || 'none';
+                applyCurrentFrame();
+            }
+            if (p.unlocked_frames) {
+                try {
+                    unlockedFrames = JSON.parse(p.unlocked_frames) || [];
+                    if (!Array.isArray(unlockedFrames)) unlockedFrames = [];
+                } catch (e) {}
+            }
             updateAllStatsUI();
         })
         .subscribe();
@@ -144,12 +155,13 @@ async function loadProfile() {
         lastChallengeDate = dbProfile.last_challenge_date || null;
         challengeCorrect = dbProfile.challenge_correct || false;
         currentFrame = dbProfile.active_frame || 'none';
-try {
-    unlockedFrames = dbProfile.unlocked_frames ? JSON.parse(dbProfile.unlocked_frames) : [];
-    if (!Array.isArray(unlockedFrames)) unlockedFrames = [];
-} catch (e) {
-    unlockedFrames = [];
-}
+
+        try {
+            unlockedFrames = dbProfile.unlocked_frames ? JSON.parse(dbProfile.unlocked_frames) : [];
+            if (!Array.isArray(unlockedFrames)) unlockedFrames = [];
+        } catch (e) {
+            unlockedFrames = [];
+        }
 
         solvedLevels = {};
         if (dbProfile.solved_levels_array) {
