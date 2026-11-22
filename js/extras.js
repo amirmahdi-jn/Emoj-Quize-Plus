@@ -1,3 +1,4 @@
+
 const timerIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c8a27a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>`;
 
 function closeSimpleModal(id) {
@@ -154,21 +155,51 @@ function initDailyChallenge() {
     if (dailyChallengeInterval) clearInterval(dailyChallengeInterval);
     dailyChallengeInterval = setInterval(updateDailyTimer, 1000);
 
-    dailySubmit.addEventListener('click', () => {
+    dailySubmit.addEventListener('click', async () => {
         if (dailyInput.disabled) return;
+
         const answer = dailyInput.value.trim();
-        if (!answer) { dailyResult.textContent = 'لطفاً پاسخ را وارد کنید.'; dailyResult.className = 'challenge-result'; return; }
-        const isCorrect = (answer === todayQuestion.answer);
+
+        if (!answer) {
+            dailyResult.textContent = 'لطفاً پاسخ را وارد کنید.';
+            dailyResult.className = 'challenge-result';
+            return;
+        }
+
+        const isCorrect = answer === todayQuestion.answer;
+        const previousDate = lastChallengeDate;
+        const previousCorrect = challengeCorrect;
+        const previousDiamonds = currentDiamonds;
 
         lastChallengeDate = today;
         challengeCorrect = isCorrect;
-        syncToDatabase();
 
-        dailyInput.disabled = true;
-        dailySubmit.disabled = true;
         if (isCorrect) {
             currentDiamonds += 5;
             updateCoinsUI();
+        }
+
+        dailyInput.disabled = true;
+        dailySubmit.disabled = true;
+
+        const saved = await syncToDatabase();
+
+        if (!saved) {
+            lastChallengeDate = previousDate;
+            challengeCorrect = previousCorrect;
+            currentDiamonds = previousDiamonds;
+
+            updateCoinsUI();
+
+            dailyInput.disabled = false;
+            dailySubmit.disabled = false;
+
+            dailyResult.textContent = 'ذخیره جایزه ناموفق بود. دوباره تلاش کنید.';
+            dailyResult.className = 'challenge-result fail';
+            return;
+        }
+
+        if (isCorrect) {
             dailyResult.textContent = 'درست! ۵ الماس دریافت کردید.';
             dailyResult.className = 'challenge-result success';
         } else {
@@ -176,7 +207,10 @@ function initDailyChallenge() {
             dailyResult.className = 'challenge-result fail';
         }
     });
-    dailyInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') dailySubmit.click(); });
+
+    dailyInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') dailySubmit.click();
+    });
 }
 
 function checkOnlineStatus() {
