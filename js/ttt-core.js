@@ -128,7 +128,7 @@ async function startTTTMatchmaking() {
                     enterTTTGame();
                 }
             }
-        }, 500);
+        }, 1000);
     } catch (e) {
         tttSearching = false;
         tttRefundEntry();
@@ -172,4 +172,4 @@ async function cancelOnlineSearch() {
     tttMovePending = false;
     tttSearching = false;
     showScreen('two-player-screen');
-}
+                    }
