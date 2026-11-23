@@ -439,3 +439,8 @@
     0%, 100% { transform: scale(1) rotate(-3deg); }
     50% { transform: scale(1.08) rotate(3deg); }
 }
+
+#buy-diamond-modal .shop-coin-icon {
+    color: #60a5fa !important;
+    stroke: #60a5fa !important;
+}
