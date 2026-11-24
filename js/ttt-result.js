@@ -7,10 +7,7 @@ function checkTTTGameEnd() {
     const title = isDraw ? 'مساوی شد! 🤝' : iWon ? 'بردی! 😃' : 'باختی! ☹️';
     const resultClass = isDraw ? 'draw' : iWon ? 'win' : 'lose';
 
-    if (tttTimerInterval) {
-        clearInterval(tttTimerInterval);
-        tttTimerInterval = null;
-    }
+    stopTTTTimer();
 
     const overlay = document.createElement('div');
     overlay.className = 'ttt-result-overlay';
@@ -45,23 +42,35 @@ async function confirmLeaveGameYes() {
         await leaveRPSGame();
         return;
     }
-    if (typeof tttGame !== 'undefined' && tttGame) {
-        await leaveTTTGame();
-    }
+    if (typeof tttGame !== 'undefined' && tttGame) await leaveTTTGame();
 }
 
 async function leaveTTTGame() {
-    if (!tttGame) return;
+    if (!tttGame || !tttGame.id) return;
 
-    if (tttGame.status === 'waiting') {
-        await tttCleanupWaitingGame();
-        tttRefundEntry();
-        await cleanupTTTGame();
-        return;
+    const gameId = tttGame.id;
+    const gameStatus = tttGame.status;
+
+    if (gameStatus === 'waiting') {
+        const cleanup = await tttCleanupWaitingGame();
+        if (cleanup.error) {
+            updateSearchText('ارتباط با سرور برقرار نشد. دوباره تلاش کنید.');
+            return;
+        }
+        if (cleanup.removed) {
+            tttRefundEntry();
+            await cleanupTTTGame();
+            return;
+        }
+        if (cleanup.game && cleanup.game.status === 'playing') {
+            tttGame = cleanup.game;
+        } else {
+            await cleanupTTTGame();
+            return;
+        }
     }
 
     if (tttGame.status === 'playing') {
-        const gameId = tttGame.id;
         const isPlayer1 = tttGame.player1_name === currentName;
         const result = isPlayer1 ? 'player2_win' : 'player1_win';
         const { data, error } = await supabaseClient
@@ -76,36 +85,47 @@ async function leaveTTTGame() {
             .select()
             .maybeSingle();
 
-        if (error || !data) return;
+        if (error) {
+            console.error('TTT leave error:', error);
+            const statusEl = document.getElementById('ttt-status-text');
+            if (statusEl) statusEl.textContent = 'خطا در خروج از بازی؛ دوباره تلاش کنید.';
+            return;
+        }
 
-        tttGame = data;
-        if (!tttRewarded) {
-            tttRewarded = true;
-            currentTrophies = Math.max(0, currentTrophies - 5);
-            updateAllStatsUI();
-            syncToDatabase();
+        if (data) {
+            tttGame = data;
+            if (!tttRewarded) {
+                tttRewarded = true;
+                currentTrophies = Math.max(0, currentTrophies - 5);
+                updateAllStatsUI();
+                syncToDatabase();
+            }
+        } else {
+            const { data: latest, error: fetchError } = await supabaseClient
+                .from('ttt_games')
+                .select('*')
+                .eq('id', gameId)
+                .maybeSingle();
+            if (fetchError) return;
+            if (latest) tttGame = latest;
         }
     }
 
     await cleanupTTTGame();
 }
 
-function exitTTTGame() {
+async function exitTTTGame() {
     const overlay = document.getElementById('ttt-result-overlay');
     if (overlay) overlay.remove();
-    cleanupTTTGame();
+    await cleanupTTTGame();
 }
 
 async function cleanupTTTGame() {
-    if (tttTimerInterval) {
-        clearInterval(tttTimerInterval);
-        tttTimerInterval = null;
-    }
-
+    stopTTTTimer();
     clearTTTSearchInterval();
 
     if (tttSubscription) {
-        supabaseClient.removeChannel(tttSubscription);
+        await supabaseClient.removeChannel(tttSubscription);
         tttSubscription = null;
     }
 
@@ -126,6 +146,9 @@ async function cleanupTTTGame() {
     tttLeaveConfirmOpen = false;
     tttRewarded = false;
     tttEntryPaid = false;
+    tttSyncInFlight = false;
+    tttTimerKey = null;
+    tttChannelStatus = 'CLOSED';
 
     showScreen('two-player-screen');
-}
+                }
