@@ -59,11 +59,11 @@ function enterTTTGame() {
     tttMovePending = false;
     resetTTTTimer();
     if (tttGame && tttGame.status === 'playing') startTTTTimer();
-    
+
     fetchTTTPlayerProfiles().then(() => {
         if (tttGame) renderTTTGame();
     });
-    
+
     if (tttGame) {
         renderTTTGame();
         checkTTTGameEnd();
@@ -179,11 +179,13 @@ async function makeTTTMove(index) {
     if (!tttGame || tttGame.status !== 'playing') return;
     if (tttGame.current_turn !== currentName) return;
     if (tttMovePending) return;
+
     const board = [...(tttGame.board || ["","","","","","","","",""])];
     if (board[index]) return;
 
     tttMovePending = true;
 
+    const turnStartedAt = tttGame.updated_at;
     const isPlayer1 = tttGame.player1_name === currentName;
     const mySymbol = isPlayer1 ? tttGame.player1_symbol : tttGame.player2_symbol;
     board[index] = mySymbol;
@@ -216,6 +218,7 @@ async function makeTTTMove(index) {
         .eq('id', tttGame.id)
         .eq('current_turn', currentName)
         .eq('status', 'playing')
+        .eq('updated_at', turnStartedAt)
         .select()
         .maybeSingle();
 
@@ -232,93 +235,87 @@ async function makeTTTMove(index) {
 }
 
 function resetTTTTimer() {
-    tttLocalTurnStart = Date.now();
+    const updatedAt = tttGame && tttGame.updated_at ? new Date(tttGame.updated_at).getTime() : Date.now();
+    tttLocalTurnStart = Number.isFinite(updatedAt) ? updatedAt : Date.now();
     tttTimeoutFired = false;
 }
 
 function startTTTTimer() {
     if (tttTimerInterval) clearInterval(tttTimerInterval);
+    resetTTTTimer();
+
     tttTimerInterval = setInterval(() => {
         if (!tttGame || tttGame.status !== 'playing') {
             const timerEl = document.getElementById('ttt-timer');
             if (timerEl) timerEl.textContent = '';
             return;
         }
+
         const elapsed = Math.floor((Date.now() - tttLocalTurnStart) / 1000);
-        const remaining = 30 - elapsed;
+        const remaining = 15 - elapsed;
         const timerEl = document.getElementById('ttt-timer');
+
         if (timerEl) {
             if (remaining > 0) {
                 timerEl.textContent = remaining + 's';
-                if (remaining <= 10) timerEl.classList.add('urgent');
+                if (remaining <= 5) timerEl.classList.add('urgent');
                 else timerEl.classList.remove('urgent');
             } else {
                 timerEl.textContent = '0s';
                 timerEl.classList.add('urgent');
-                if (!tttTimeoutFired && tttGame.current_turn === currentName) {
+                if (!tttTimeoutFired) {
                     tttTimeoutFired = true;
                     handleTTTTimeout();
                 }
             }
+        } else if (remaining <= 0 && !tttTimeoutFired) {
+            tttTimeoutFired = true;
+            handleTTTTimeout();
         }
-    }, 500);
+    }, 250);
 }
 
 async function handleTTTTimeout() {
-    if (!tttGame || tttGame.status !== 'playing') return;
-    if (tttGame.current_turn !== currentName) return;
-    if (tttMovePending) return;
+    if (!tttGame || tttGame.status !== 'playing' || tttMovePending) return;
 
-    tttMovePending = true;
-
-    const board = [...(tttGame.board || ["","","","","","","","",""])];
-    const emptyCells = board.map((c, i) => c === '' ? i : -1).filter(i => i >= 0);
-    if (emptyCells.length === 0) { tttMovePending = false; return; }
-    const randomIdx = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-
-    const isPlayer1 = tttGame.player1_name === currentName;
-    const mySymbol = isPlayer1 ? tttGame.player1_symbol : tttGame.player2_symbol;
-    board[randomIdx] = mySymbol;
-
-    const winningCells = getTTTWinningCells(board);
-    const isDraw = board.every(c => c);
-    let newStatus = 'playing';
-    let nextTurn = isPlayer1 ? tttGame.player2_name : tttGame.player1_name;
-    let result = null;
-
-    if (winningCells.length) {
-        newStatus = 'finished';
-        result = isPlayer1 ? 'player1_win' : 'player2_win';
-    } else if (isDraw) {
-        newStatus = 'finished';
-        result = 'draw';
+    const turnStartedAt = tttGame.updated_at;
+    if (!turnStartedAt || Date.now() - new Date(turnStartedAt).getTime() < 15000) {
+        tttTimeoutFired = false;
+        return;
     }
 
-    const updateData = {
-        board: board,
-        current_turn: nextTurn,
-        status: newStatus,
-        updated_at: new Date().toISOString()
-    };
-    if (result) updateData.result = result;
+    tttMovePending = true;
+    const isPlayer1 = tttGame.current_turn === tttGame.player1_name;
+    const nextTurn = isPlayer1 ? tttGame.player2_name : tttGame.player1_name;
 
     const { data, error } = await supabaseClient
         .from('ttt_games')
-        .update(updateData)
+        .update({
+            current_turn: nextTurn,
+            updated_at: new Date().toISOString()
+        })
         .eq('id', tttGame.id)
-        .eq('current_turn', currentName)
+        .eq('current_turn', tttGame.current_turn)
         .eq('status', 'playing')
+        .eq('updated_at', turnStartedAt)
         .select()
         .maybeSingle();
 
+    tttMovePending = false;
+
     if (error || !data) {
-        tttMovePending = false;
+        if (tttGame && tttGame.status === 'playing' && tttGame.updated_at === turnStartedAt) {
+            setTimeout(() => {
+                if (tttGame && tttGame.status === 'playing' && tttGame.updated_at === turnStartedAt) {
+                    tttTimeoutFired = false;
+                }
+            }, 1000);
+        }
         return;
     }
 
     tttGame = data;
     resetTTTTimer();
-    if (tttGame.status === 'playing') startTTTTimer();
+    startTTTTimer();
     renderTTTGame();
-    checkTTTGameEnd();
 }
