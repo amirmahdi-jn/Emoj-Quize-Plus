@@ -33,6 +33,7 @@ function exitRPSGame() {
 
 async function cleanupRPSGame() {
     clearRPSSearchInterval();
+    clearRPSRoundTimer();
     if (rpsSubscription) {
         supabaseClient.removeChannel(rpsSubscription);
         rpsSubscription = null;
