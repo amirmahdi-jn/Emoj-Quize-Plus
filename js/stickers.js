@@ -236,7 +236,7 @@ async function buyStickerPack(packId) {
         }
         const message = data && data.message === 'insufficient_coins'
             ? 'سکه کافی برای خرید این پک نداری.'
-            : 'خرید انجام نشد. اتصال دیتابیس و اجرای SQL را بررسی کن.';
+            : 'خرید انجام نشد. لطفا مجدد تلاش کنید.';
         showCustomAlert('خرید ناموفق', message, 'error');
         return;
     }
