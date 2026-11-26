@@ -57,7 +57,7 @@ async function syncToDatabase() {
 
         if (error) {
             console.error("Sync Error:", error);
-            showCustomAlert('خطا', 'خطا در ذخیره اطلاعات در دیتابیس! لطفا اینترنت خود را بررسی کنید.', 'error');
+            showCustomAlert('خطا', 'لطفا اینترنت خود را بررسی کنید.', 'error');
             return false;
         }
 
@@ -65,7 +65,7 @@ async function syncToDatabase() {
         return true;
     } catch (error) {
         console.error("Sync Error:", error);
-        showCustomAlert('خطا', 'خطا در ذخیره اطلاعات در دیتابیس! لطفا اینترنت خود را بررسی کنید.', 'error');
+        showCustomAlert('خطا', 'لطفا اینترنت خود را بررسی کنید.', 'error');
         return false;
     }
 }
@@ -121,7 +121,7 @@ async function loadProfile() {
 
         if (error) {
             console.error("Load Profile Error:", error);
-            showCustomAlert('خطا', 'خطا در دریافت پروفایل! لطفا صفحه را رفرش کنید.', 'error');
+            showCustomAlert('خطا', 'لطفا صفحه را رفرش کنید.', 'error');
             document.getElementById('offline-overlay').classList.add('active');
             return;
         }
@@ -179,7 +179,7 @@ async function loadProfile() {
 
     if (insertError) {
         console.error("Insert Profile Error:", insertError);
-        showCustomAlert('خطا در ساخت اکانت', 'خطا در ساخت اکانت جدید! لطفا با پشتیبانی تماس بگیرید.', 'error');
+        showCustomAlert('خطا', 'لطفا با پشتیبانی تماس بگیرید.', 'error');
         document.getElementById('offline-overlay').classList.add('active');
         return;
     }
