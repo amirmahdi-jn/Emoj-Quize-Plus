@@ -187,7 +187,7 @@ function renderTTTGame() {
     const statusEl = document.getElementById('ttt-status-text');
     if (statusEl) {
         if (tttGame.status === 'finished') {
-            statusEl.textContent = 'بازی تمام شد';
+            statusEl.textContent = 'بازی تمام شد.';
         } else if (tttGame.status === 'waiting') {
             statusEl.textContent = 'در انتظار...';
         } else {
